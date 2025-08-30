@@ -1,0 +1,37 @@
+name: Generate Image List
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - 'images/**'
+
+jobs:
+  generate-list:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Install jq
+      run: sudo apt-get update && sudo apt-get install -y jq
+      
+    - name: Generate image list
+      run: |
+        #!/bin/bash
+        find images -maxdepth 1 -type f \( -iname \*.jpg -o -iname \*.jpeg -o -iname \*.png -o -iname \*.gif -o -iname \*.webp \) | sed 's/^images\///' | jq -R . | jq -s . > image_list.json
+        
+        echo "Generated image_list.json content:"
+        cat image_list.json
+        
+    - name: Commit and push changes
+      run: |
+        git config user.name 'github-actions[bot]'
+        git config user.email 'github-actions[bot]@users.noreply.github.com'
+        git add image_list.json
+        git commit -m "chore: Update image list [skip ci]" || echo "No changes to commit"
+        git push
